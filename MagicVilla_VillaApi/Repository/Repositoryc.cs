@@ -3,6 +3,7 @@ using DreamVilla_VillaApi.Models;
 using DreamVilla_VillaApi.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace DreamVilla_VillaApi.Repository
 {
@@ -22,22 +23,32 @@ namespace DreamVilla_VillaApi.Repository
 			await SaveAsync();
 		}
 
-		public async Task<T> GetAsync(Expression<Func<T, bool>>? filter = null, bool IsTracked = true)
+		public async Task<T> GetAsync(Expression<Func<T, bool>>? filter = null, bool IsTracked = true, string? IncludeProperties = null)
 		{
-			IQueryable<T> qurey = DbSet;
+			IQueryable<T> query = DbSet;
 
 			if (!IsTracked)
 			{
-				qurey = qurey.Where(filter).AsNoTracking();
+				query = query.Where(filter).AsNoTracking();
 			}
 			if (filter != null)
 			{
-				qurey = qurey.Where(filter);
+				query = query.Where(filter);
 			}
-			return await qurey.FirstOrDefaultAsync();
+			//Check for Navigation props
+
+			if (IncludeProperties != null)
+			{
+				foreach (var property in IncludeProperties.Split(new char[] {','},StringSplitOptions.RemoveEmptyEntries))
+				{
+					query = query.Include(property);
+				}
+			}
+			return await query.FirstOrDefaultAsync();
 		}
 
-		public async Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null)
+		public async Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? IncludeProperties = null,
+            int PageSize = 0, int PageNumber = 1)
 		{
 			IQueryable<T> query = DbSet;
 
@@ -45,6 +56,25 @@ namespace DreamVilla_VillaApi.Repository
 			{
 
 				query = query.Where(filter);
+			}
+
+			if (PageSize > 0)
+			{
+				if (PageNumber > 100)
+				{
+                    PageNumber = 100;
+				}
+				query = query.Skip(PageSize * (PageNumber-1)).Take(PageSize);
+			}
+
+
+
+			if (IncludeProperties != null)
+			{
+				foreach (var property in IncludeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+				{
+					query = query.Include(property);
+				}
 			}
 			return await query.ToListAsync();
 

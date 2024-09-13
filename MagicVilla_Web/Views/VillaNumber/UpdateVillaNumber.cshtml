@@ -1,0 +1,66 @@
+﻿@model MagicVilla_Web.Models.ViewModels.VillaNumberUpdateVM
+
+
+
+<form asp-action="UpdateVillaNumber">
+	<br />
+
+
+
+	<div class="container p-4 border "> 
+
+		<div class="row-cols-10 ">
+			<h1 class="text-primary col-6"> Update Villa Number</h1>
+		</div>
+		<hr />
+
+		<div class="row">
+
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+			<input hidden asp-for="VillaNumber.VillaNo" />
+
+			<div class="col-2">
+				<label asp-for="VillaNumber.VillaNo"  class="form-label pt-2" style="font-size:20px;"></label>
+			</div>
+			<div class="col-10">
+				<input class="form-control" disabled asp-for="VillaNumber.VillaNo" />
+				<span asp-validation-for="VillaNumber.VillaNo" class="text-danger"></span>
+			</div>
+
+			<div class="col-2">
+				<label asp-for="VillaNumber.SpecialDetails" class="form-label pt-2" style="font-size:20px;"></label>
+			</div>
+			<div class="col-10 pb-3">
+				<textarea asp-for="VillaNumber.SpecialDetails" class="form-text" cols="150" rows="10"></textarea> 
+				<span asp-validation-for="VillaNumber.SpecialDetails" class="text-danger"></span>
+			</div>
+
+
+			<div class="pb-3 ">
+
+			<select asp-for="@Model.VillaNumber.VillaId" asp-items="Model.VillasMenuList" class="form-select p-3">
+				
+			</select>
+
+			</div>
+
+			<div class="col-5 offset-2">
+				<a asp-action="VillaNumberIndex" asp-controller="VillaNumber" class="btn btn-primary form-control">Back To Villa Numbers List</a>
+			</div>
+
+			<div class="col-5">
+				<input type="submit" value="Update" class="btn btn-warning form-control" />
+			</div>
+
+
+
+		</div>
+
+	</div>
+
+</form>
+
+@section Scripts{
+	<partial name="_ValidationScriptsPartial" />
+}

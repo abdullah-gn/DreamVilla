@@ -15,8 +15,9 @@ namespace DreamVilla_VillaApi
 			CreateMap<VillaNumber,VillaNumberDTO>().ReverseMap();
 			CreateMap<VillaNumberCreateDTO,VillaNumber>().ReverseMap();
 			CreateMap<VillaNumberUpdateDTO, VillaNumber>().ReverseMap();
+			CreateMap<ApplicationUser, AppUserDto>().ReverseMap();
 
-		}
+        }
 
     }
 }
