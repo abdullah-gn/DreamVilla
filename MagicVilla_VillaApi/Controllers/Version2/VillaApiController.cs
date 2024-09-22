@@ -8,7 +8,9 @@ using DreamVilla_VillaApi.Repository.IRepository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Net;
 using System.Text.Json;
 
@@ -51,7 +53,7 @@ namespace DreamVilla_VillaApi.Controllers.Version2
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
-        [ResponseCache(CacheProfileName = "default30")]
+        // [ResponseCache(CacheProfileName = "default30")]
         // [ResponseCache(Location =ResponseCacheLocation.None,NoStore =true)]
         public async Task<ActionResult<APIResponse>> GetVillas([FromQuery(Name = "OccupancyFilter")] int? Occupancy,
             [FromQuery] string? Search, int pageSize = 0, int PageNumber = 1)
@@ -154,7 +156,7 @@ namespace DreamVilla_VillaApi.Controllers.Version2
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<APIResponse>> CreateVilla([FromBody] VillaCreateDTO CreateVillaDTO)
+        public async Task<ActionResult<APIResponse>> CreateVilla([FromForm] VillaCreateDTO CreateVillaDTO)
         {
             try
             {
@@ -181,8 +183,36 @@ namespace DreamVilla_VillaApi.Controllers.Version2
                     return BadRequest(_Response);
                 }
                 Villa Villaa = _mapper.Map<Villa>(CreateVillaDTO);
-
                 await _db.AddAsync(Villaa);
+
+                if (CreateVillaDTO.Image != null)
+                {
+                    var fileName = Villaa.Id+ Path.GetExtension(CreateVillaDTO.Image.FileName);
+                    var filePath = @"wwwroot\ProductImage\" + fileName;
+
+                    var dirLocation = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+
+                    FileInfo file = new FileInfo(dirLocation);
+                    if (file.Exists)
+                    {
+                        file.Delete();
+                    }
+                    using (var fileStream = new FileStream(dirLocation, FileMode.Create))
+                    {
+                        CreateVillaDTO.Image.CopyTo(fileStream);
+                    }
+                    var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+                    Villaa.ImageUrl = baseUrl + "/ProductImage/" + fileName;
+                    Villaa.ImageLocalPath = filePath;
+
+
+                }
+                else
+                {
+                    Villaa.ImageUrl = "https://placehold.co/600x400";
+                }
+
+                await _db.updateAsync(Villaa);
 
                 _Response.Result = Villaa;
                 _Response.StatusCode = HttpStatusCode.Created;
@@ -222,6 +252,16 @@ namespace DreamVilla_VillaApi.Controllers.Version2
 
                 if (Villa != null)
                 {
+                    if (!string.IsNullOrEmpty(Villa.ImageLocalPath))
+                    {
+                        var oldDirLocalPath = Path.Combine(Directory.GetCurrentDirectory(), Villa.ImageLocalPath);
+                        FileInfo file = new FileInfo(oldDirLocalPath);
+                        if (file.Exists)
+                        {
+                            file.Delete();
+                        }
+                    }
+
                     await _db.RemoveAsync(Villa);
                     _Response.Result = _mapper.Map<VillaDTO>(Villa);
                     _Response.StatusCode = HttpStatusCode.OK;
@@ -249,16 +289,10 @@ namespace DreamVilla_VillaApi.Controllers.Version2
         [HttpPut("{id:int}", Name = "UpdateVilla")]
         [Authorize(Roles = "Admin")]
 
-        public async Task<ActionResult<APIResponse>> putVilla(int id, [FromBody] VillaUpdateDTO UpdateVillaDto)
+        public async Task<ActionResult<APIResponse>> PutVilla(int id, [FromForm] VillaUpdateDTO UpdateVillaDto)
         {
             try
             {
-                if (id == null)
-                {
-                    _Response.IsSucceed = false;
-                    _Response.StatusCode = HttpStatusCode.BadRequest;
-                    return BadRequest(_Response);
-                }
                 var villa = await _db.GetAsync(n => n.Id == id, isTracked: false);
 
                 if (id == 0)
@@ -274,6 +308,38 @@ namespace DreamVilla_VillaApi.Controllers.Version2
                     return NotFound(_Response);
                 }
                 Villa VillaModel = _mapper.Map<Villa>(UpdateVillaDto);
+
+                if (UpdateVillaDto.Image != null)
+                {
+                    if (!string.IsNullOrEmpty(VillaModel.ImageLocalPath))
+                    {
+                        var oldDirLocalPath = Path.Combine(Directory.GetCurrentDirectory(), VillaModel.ImageLocalPath);
+                        FileInfo file = new FileInfo(oldDirLocalPath);
+                        if (file.Exists)
+                        {
+                            file.Delete();
+                        }
+                    }  
+
+                    var fileName = UpdateVillaDto.Id + Path.GetExtension(UpdateVillaDto.Image.FileName);
+                    var filePath = @"wwwroot\ProductImage\" + fileName;
+
+                    var dirLocation = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+
+                    using (var fileStream = new FileStream(dirLocation, FileMode.Create))
+                    {
+                        UpdateVillaDto.Image.CopyTo(fileStream);
+                    }
+                    var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+                    VillaModel.ImageUrl = baseUrl + "/ProductImage/" + fileName;
+                    VillaModel.ImageLocalPath = filePath;
+
+
+                }
+                else
+                {
+                    VillaModel.ImageUrl = "https://placehold.co/600x400";
+                }
 
                 await _db.updateAsync(VillaModel);
                 _Response.Result = VillaModel;

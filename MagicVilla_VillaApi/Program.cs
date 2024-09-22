@@ -152,10 +152,10 @@ builder.Services.AddAuthentication(x =>
 builder.Services.AddMemoryCache();
 builder.Services.AddControllers(options =>
 {
-    options.CacheProfiles.Add("default30", new CacheProfile
-    {
-        Duration = 30
-    });
+   // options.CacheProfiles.Add("default30", new CacheProfile
+   // {
+   //     Duration = 30
+   // });
 });
 
 //builder.Services.AddSingleton<ILogging, Logging>();
@@ -171,7 +171,7 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Magic Villa V1");
     });
 }
-
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

@@ -109,7 +109,8 @@ namespace MagicVilla_Web.Controllers
 				new SelectListItem{Text = SD.Customer , Value = SD.Customer},
 			};
 			ViewBag.RolesList = Roles;
-			return View(Registermodel);
+            ModelState.AddModelError("Custom", Result.ErrorMessage.First());
+            return View(Registermodel);
 		}
 
 

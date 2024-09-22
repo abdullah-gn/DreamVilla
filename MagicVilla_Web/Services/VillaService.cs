@@ -23,8 +23,8 @@ namespace MagicVilla_Web.Services
 				ApiType = SD.ApiType.POST,
 				ApiUrl = url+ $"/api/{SD.ApiVersion}/VillaApi",
 				Data = Villadto,
-                token = token
-
+                token = token,
+				ContentType = SD.ContentType.MultipartFormData
             });
 		}
 
@@ -33,16 +33,14 @@ namespace MagicVilla_Web.Services
 			return SendAsync<T>(new ApiRequest()
 			{
 				ApiType = SD.ApiType.DELETE,
-				ApiUrl = url + $"/api/{SD.ApiVersion}/VillaApi" + id,
+				ApiUrl = url + $"/api/{SD.ApiVersion}/VillaApi/" + id,
 				Data = null,
-                token = token
+                token = token,
             });
 		}
 
 		public Task<T> GetAllAsync<T>(string token)
 		{
-			
-
 			return SendAsync<T>(new ApiRequest()
 			{
 				ApiType = SD.ApiType.GET,
@@ -56,7 +54,7 @@ namespace MagicVilla_Web.Services
 			return SendAsync<T>(new ApiRequest()
 			{
 				ApiType = SD.ApiType.GET,
-				ApiUrl = url + $"/api/{SD.ApiVersion}/VillaApi" + id,
+				ApiUrl = url + $"/api/{SD.ApiVersion}/VillaApi/" + id,
 				token = token
 			});
 		}
@@ -66,10 +64,10 @@ namespace MagicVilla_Web.Services
 			return SendAsync<T>(new ApiRequest()
 			{
 				ApiType = SD.ApiType.PUT,
-				ApiUrl = url + $"/api/{SD.ApiVersion}/VillaApi" + Villadto.Id,
+				ApiUrl = url + $"/api/{SD.ApiVersion}/VillaApi/" + Villadto.Id,
 				Data = Villadto,
-				token = token
-
+				token = token,
+                ContentType = SD.ContentType.MultipartFormData
 			});
 		}
 	}

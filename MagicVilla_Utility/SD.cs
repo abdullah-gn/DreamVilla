@@ -12,5 +12,10 @@
 		public static string ApiVersion = "V2";
 		public const string Admin  = "Admin";
         public const string Customer = "Customer";
+		public enum ContentType
+		{
+			Json,
+			MultipartFormData
+		}
     }
 }

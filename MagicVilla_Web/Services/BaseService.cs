@@ -4,6 +4,7 @@ using MagicVilla_Web.Services.IServices;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
+using static MagicVilla_Utility.SD;
 
 namespace MagicVilla_Web.Services
 {
@@ -18,25 +19,57 @@ namespace MagicVilla_Web.Services
             responseModel = new();
             httpClient = ClientFactory;
         }
-
-
-
         public async Task<T> SendAsync<T>(ApiRequest ApiRequest)
         {
             try
             {
                 HttpClient client = httpClient.CreateClient("MagicVilla");
                 HttpRequestMessage Msg = new HttpRequestMessage();
-                Msg.Headers.Add("Accept", "application/json");
-                Msg.RequestUri = new Uri(ApiRequest.ApiUrl);
+                if (ApiRequest.ContentType == ContentType.MultipartFormData)
+                {
+                    Msg.Headers.Add("Accept", "*/*");
+                }
+                else
+                {
+                    Msg.Headers.Add("Accept", "application/json");
+                }
+                if (ApiRequest.ContentType == ContentType.MultipartFormData)
+                {
+                    var content = new MultipartFormDataContent();
+
+                    foreach (var prop in ApiRequest.Data.GetType().GetProperties())
+                    {
+                        var value = prop.GetValue(ApiRequest.Data);
+                        if (value is FormFile)
+                        {
+                            var file = (FormFile)value;
+                            if (file!=null)
+                            {
+                                content.Add(new StreamContent(file.OpenReadStream()), prop.Name, file.FileName);
+                            }
+                        }
+                        else
+                        {
+                            content.Add(new StringContent(value == null ? "" : value.ToString()), prop.Name);
+                        }
+                    }
+                    Msg.Content = content;
+                }
+                else
+                {
+                    if (ApiRequest.Data != null)
+                    {
+
+                        Msg.Content = new StringContent(JsonConvert.SerializeObject(ApiRequest.Data),
+                            Encoding.UTF8, "application/json");
+                    }
+
+                }
+                    Msg.RequestUri = new Uri(ApiRequest.ApiUrl);
 
                 //in case of Data != null >>>> POST > PUT 
-                if (ApiRequest.Data != null)
-                {
 
-                    Msg.Content = new StringContent(JsonConvert.SerializeObject(ApiRequest.Data),
-                        Encoding.UTF8, "application/json");
-                }
+         
                 switch (ApiRequest.ApiType)
                 {
                     case SD.ApiType.GET:
@@ -63,7 +96,7 @@ namespace MagicVilla_Web.Services
                 ResponseMsg = await client.SendAsync(Msg);
                 var responseContent = await ResponseMsg.Content.ReadAsStringAsync();
                 try
-                {
+                 {
 					APIResponse APIResp = JsonConvert.DeserializeObject<APIResponse>(responseContent);
 					if (APIResp != null && 
                       (ResponseMsg.StatusCode == System.Net.HttpStatusCode.NotFound || ResponseMsg.StatusCode == System.Net.HttpStatusCode.BadRequest))

@@ -70,7 +70,7 @@ namespace MagicVilla_Web.Controllers
         public async Task<IActionResult> UpdateVilla(int id)
 
 		{
-			if (id != null)
+			if (id != default)
 			{
 				var Apiresponse = await VillaService.GetAsync<APIResponse>(id, HttpContext.Session.GetString(SD.SessionToken));
 
