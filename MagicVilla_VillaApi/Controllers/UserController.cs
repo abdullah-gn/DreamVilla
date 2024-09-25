@@ -32,7 +32,7 @@ namespace DreamVilla_VillaApi.Controllers
         {
             var loginResponse = await userrepo.Login(Loginmodel);
 
-            if (loginResponse.User == null || string.IsNullOrEmpty(loginResponse.Token))
+            if (loginResponse == null || string.IsNullOrEmpty(loginResponse.AccessToken))
             {
                 _response.IsSucceed = false;
                 _response.ErrorMessage.Add("Invalid User Name or Password");

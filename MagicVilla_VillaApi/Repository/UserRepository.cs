@@ -46,7 +46,7 @@ namespace DreamVilla_VillaApi.Repository
 		}
 
 
-		public async Task<LoginResponseDto> Login(LoginRequestDto loginuserDto)
+		public async Task<TokenDto> Login(LoginRequestDto loginuserDto)
 		{
 			var user = db.applicationUsers.FirstOrDefault(n=>n.UserName.ToLower() == loginuserDto.UserName.ToLower());
 
@@ -56,44 +56,19 @@ namespace DreamVilla_VillaApi.Repository
 
 			if(user == null || IsValid == false)
 			{
-				return new LoginResponseDto()
+				return new TokenDto()
 				{
-					Token = "",
-					User = null
+					AccessToken = ""
 				};
 			}
-			//Generate JWT token
-			//Token handler > JWTSecurity TokenHandler
-			//Token descriptor
-			//subject > array of identityClaims > Name , Role
-			//Expires
-			//SingingCredentials > Key , Algo
 
-			var Roles = await userManager.GetRolesAsync(user);
+			var accessToken = await GetAccessToken(user);
 
-			var tokenHandler = new JwtSecurityTokenHandler();
-
-			var key = Encoding.ASCII.GetBytes(SecretKey);
-
-			var TokenDescriptor = new SecurityTokenDescriptor()
+			TokenDto loginToken = new()
 			{
-				Subject = new ClaimsIdentity(new Claim[]
-				{
-					new Claim(ClaimTypes.Name, user.UserName.ToString()),
-					new Claim(ClaimTypes.Role, Roles.FirstOrDefault())
-				}),
-				Expires = DateTime.UtcNow.AddDays(7),
-				SigningCredentials = new(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-			};
-
-			var token = tokenHandler.CreateToken(TokenDescriptor);
-
-			LoginResponseDto loginResponseDto = new()
-			{
-				Token = tokenHandler.WriteToken(token),
-				User = mapping.Map<AppUserDto>(user),
+				AccessToken = accessToken,
             };
-			return loginResponseDto;			
+			return loginToken;			
 		}
 
 
@@ -144,6 +119,36 @@ namespace DreamVilla_VillaApi.Repository
             }
 			return new AppUserDto();
 		}		
+		private async Task<string> GetAccessToken(ApplicationUser user)
+		{
+			//Generate JWT token
+			//Token handler > JWTSecurity TokenHandler
+			//Token descriptor
+			//subject > array of identityClaims > Name , Role
+			//Expires
+			//SingingCredentials > Key , Algo
+
+			var Roles = await userManager.GetRolesAsync(user);
+
+			var tokenHandler = new JwtSecurityTokenHandler();
+
+			var key = Encoding.ASCII.GetBytes(SecretKey);
+
+			var TokenDescriptor = new SecurityTokenDescriptor()
+			{
+				Subject = new ClaimsIdentity(new Claim[]
+				{
+					new Claim(ClaimTypes.Name, user.UserName.ToString()),
+					new Claim(ClaimTypes.Role, Roles.FirstOrDefault())
+				}),
+				Expires = DateTime.UtcNow.AddDays(7),
+				SigningCredentials = new(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+			};
+
+			var token = tokenHandler.CreateToken(TokenDescriptor);
+			var tokenStr = tokenHandler.WriteToken(token);
+			return tokenStr;
+		}
 
 	}
 	

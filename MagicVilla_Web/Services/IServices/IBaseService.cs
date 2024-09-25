@@ -6,6 +6,6 @@ namespace MagicVilla_Web.Services.IServices
 	{
          APIResponse responseModel { get; set; }
 
-		 Task<T> SendAsync<T>(ApiRequest ApiRequest);  
+		 Task<T> SendAsync<T>(ApiRequest ApiRequest, bool withBearer = true);  
     }
 }

@@ -23,7 +23,7 @@ namespace MagicVilla_Web.Controllers
 		{
 			List<VillaDTO> Villas = new();
 
-			var Apiresponse = await VillaService.GetAllAsync<APIResponse>(HttpContext.Session.GetString(SD.SessionToken));
+			var Apiresponse = await VillaService.GetAllAsync<APIResponse>();
 
 			if (Apiresponse != null && Apiresponse.IsSucceed)
 			{

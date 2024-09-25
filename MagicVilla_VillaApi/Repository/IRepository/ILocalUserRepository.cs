@@ -9,7 +9,7 @@ namespace DreamVilla_VillaApi.Repository.IRepository
 
 		Task<AppUserDto> Register(RegisterDto registeruserDto);
 
-		Task<LoginResponseDto> Login(LoginRequestDto loginuserDto);
+		Task<TokenDto> Login(LoginRequestDto loginuserDto);
 
 	}
 }

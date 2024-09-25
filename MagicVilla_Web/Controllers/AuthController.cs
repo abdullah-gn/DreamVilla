@@ -16,10 +16,11 @@ namespace MagicVilla_Web.Controllers
 	public class AuthController : Controller
 	{
 		private readonly IAuthService authService;
-
-		public AuthController(IAuthService AuthService)
-        {
+		private readonly ITokenProvider _tokenProvider;
+		public AuthController(IAuthService AuthService, ITokenProvider tokenProvider)
+		{
 			authService = AuthService;
+			_tokenProvider = tokenProvider;
 		}
 
 		[HttpGet]
@@ -41,10 +42,10 @@ namespace MagicVilla_Web.Controllers
 				APIResponse Resp = await authService.LoginAsync<APIResponse>(Loginmodel);
 				if(Resp != null && Resp.IsSucceed)
 				{
-                    LoginResponseDto model = JsonConvert.DeserializeObject<LoginResponseDto>(Convert.ToString(Resp.Result));
+                    TokenDto model = JsonConvert.DeserializeObject<TokenDto>(Convert.ToString(Resp.Result));
 
                     var Handler = new JwtSecurityTokenHandler();
-					var jwtToken = Handler.ReadJwtToken(model.Token);
+					var jwtToken = Handler.ReadJwtToken(model.AccessToken);
 
 
 
@@ -55,8 +56,8 @@ namespace MagicVilla_Web.Controllers
 					var priciple = new ClaimsPrincipal(identity);
 
 					await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,priciple);
+					_tokenProvider.SetToken(model);
 
-                    HttpContext.Session.SetString(SD.SessionToken, model.Token);
 					return RedirectToAction("Index","Home");
 				}
 				else
@@ -118,8 +119,8 @@ namespace MagicVilla_Web.Controllers
 		public async Task<IActionResult> Logout()
 		{
 			await HttpContext.SignOutAsync();
-			HttpContext.Session.SetString(SD.SessionToken, "");
-			return RedirectToAction("Login");
+			_tokenProvider.ClearToken();
+				return RedirectToAction("Login");
 		}
 
 		public IActionResult AccessDenied()

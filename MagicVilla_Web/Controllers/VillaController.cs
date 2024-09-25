@@ -25,7 +25,7 @@ namespace MagicVilla_Web.Controllers
 		{
 			List<VillaDTO> Villas = new();
 
-			var Apiresponse = await VillaService.GetAllAsync<APIResponse>(HttpContext.Session.GetString(SD.SessionToken));
+			var Apiresponse = await VillaService.GetAllAsync<APIResponse>();
 
 			if (Apiresponse != null && Apiresponse.IsSucceed)
 			{
@@ -52,7 +52,7 @@ namespace MagicVilla_Web.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var Apiresponse = await VillaService.CreateAsync<APIResponse>(VillaData, HttpContext.Session.GetString(SD.SessionToken));
+				var Apiresponse = await VillaService.CreateAsync<APIResponse>(VillaData);
 
 				if (Apiresponse != null && Apiresponse.IsSucceed)
 				{
@@ -72,7 +72,7 @@ namespace MagicVilla_Web.Controllers
 		{
 			if (id != default)
 			{
-				var Apiresponse = await VillaService.GetAsync<APIResponse>(id, HttpContext.Session.GetString(SD.SessionToken));
+				var Apiresponse = await VillaService.GetAsync<APIResponse>(id);
 
 				if (Apiresponse != null && Apiresponse.IsSucceed)
 				{
@@ -91,7 +91,7 @@ namespace MagicVilla_Web.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				var Apiresponse = await VillaService.UpdateAsync<APIResponse>(Villa, HttpContext.Session.GetString(SD.SessionToken));
+				var Apiresponse = await VillaService.UpdateAsync<APIResponse>(Villa);
 
 				if (Apiresponse != null && Apiresponse.IsSucceed)
 				{
@@ -109,7 +109,7 @@ namespace MagicVilla_Web.Controllers
         public async Task<IActionResult> DeleteVilla(int id)
 		{
 			
-				var Apiresponse = await VillaService.GetAsync<APIResponse>(id, HttpContext.Session.GetString(SD.SessionToken));
+				var Apiresponse = await VillaService.GetAsync<APIResponse>(id);
 
 				if (Apiresponse != null && Apiresponse.IsSucceed)
 				{
@@ -127,7 +127,7 @@ namespace MagicVilla_Web.Controllers
 		public async Task<IActionResult> DeleteVilla(VillaDTO Villa)
 		{
 			
-				var Apiresponse = await VillaService.DeleteAsync<APIResponse>(Villa.Id, HttpContext.Session.GetString(SD.SessionToken));
+				var Apiresponse = await VillaService.DeleteAsync<APIResponse>(Villa.Id);
 
 				if (Apiresponse != null && Apiresponse.IsSucceed)
 				{

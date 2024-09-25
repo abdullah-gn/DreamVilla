@@ -11,15 +11,15 @@ namespace MagicVilla_Web.Services
     public class BaseService : IBaseService
     {
         public APIResponse responseModel { get; set; }
-
         public IHttpClientFactory httpClient { get; set; }
-
-        public BaseService(IHttpClientFactory ClientFactory)
-        {
-            responseModel = new();
-            httpClient = ClientFactory;
-        }
-        public async Task<T> SendAsync<T>(ApiRequest ApiRequest)
+        private readonly ITokenProvider _tokenProvider;
+		public BaseService(IHttpClientFactory ClientFactory, ITokenProvider tokenProvider)
+		{
+			responseModel = new();
+			httpClient = ClientFactory;
+			_tokenProvider = tokenProvider;
+		}
+		public async Task<T> SendAsync<T>(ApiRequest ApiRequest, bool withBearer)
         {
             try
             {
@@ -33,6 +33,12 @@ namespace MagicVilla_Web.Services
                 {
                     Msg.Headers.Add("Accept", "application/json");
                 }
+                if (withBearer && _tokenProvider.GetToken() != null)
+                {
+                    var token = _tokenProvider.GetToken();
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+                }
+
                 if (ApiRequest.ContentType == ContentType.MultipartFormData)
                 {
                     var content = new MultipartFormDataContent();
