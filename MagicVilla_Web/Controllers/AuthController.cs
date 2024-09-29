@@ -113,14 +113,13 @@ namespace MagicVilla_Web.Controllers
             ModelState.AddModelError("Custom", Result.ErrorMessage.First());
             return View(Registermodel);
 		}
-
-
-
 		public async Task<IActionResult> Logout()
 		{
 			await HttpContext.SignOutAsync();
+			var token = _tokenProvider.GetToken();
+			await authService.LogoutAsync<APIResponse>(token);
 			_tokenProvider.ClearToken();
-				return RedirectToAction("Login");
+			return RedirectToAction("Login");
 		}
 
 		public IActionResult AccessDenied()

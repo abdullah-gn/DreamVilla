@@ -1,8 +1,3 @@
-//using Serilog;
-
-//using DreamVilla_VillaApi.Logging;
-
-using AutoMapper;
 using DreamVilla_VillaApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,6 +12,7 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -129,7 +125,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<IVillaRepository,VillaRepository>();
 builder.Services.AddScoped<IVillaNumberRepository, VillaNumberRepository>();
-builder.Services.AddScoped<ILocalUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddAuthentication(x =>
 {
 
@@ -146,6 +142,8 @@ builder.Services.AddAuthentication(x =>
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
             ValidateIssuer = false,
             ValidateAudience = false,
+            //if it's a 1 sec diff for the token then it's expired and make sure there are 0 tolerance sec for the token expiry
+            ClockSkew = TimeSpan.Zero
         };
     });
 

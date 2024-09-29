@@ -15,10 +15,10 @@ namespace DreamVilla_VillaApi.Controllers
     [ApiVersionNeutral]
     public class UserController : ControllerBase
     {
-        private readonly ILocalUserRepository userrepo;
+        private readonly IUserRepository userrepo;
         private APIResponse _response;
 
-        public UserController(ILocalUserRepository _Userrepo)
+        public UserController(IUserRepository _Userrepo)
         {
             userrepo = _Userrepo;
             _response = new();
@@ -62,21 +62,62 @@ namespace DreamVilla_VillaApi.Controllers
             }
 
             var usre = await userrepo.Register(Registermodel);
-            if (usre == null || usre.Id == null )
+            if (usre == null || usre.Id == null)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.IsSucceed = false;
                 _response.ErrorMessage.Add("Error while Registering");
-               //// _response.ErrorMessage.Add(usre.Errors);
+                //// _response.ErrorMessage.Add(usre.Errors);
 
             }
             _response.StatusCode = HttpStatusCode.OK;
             _response.Result = usre;
             return Ok(_response);
-
-
         }
 
+        [HttpPost("refresh")]
+        public async Task<IActionResult> GetNewTokenFromRefreshToken([FromBody] TokenDto tokenDto)
+        {
+            if (ModelState.IsValid)
+            {
+				var tokenDtoResponse = await userrepo.RefreshAccessToken(tokenDto);
 
-    }
+				if (tokenDtoResponse == null || string.IsNullOrEmpty(tokenDtoResponse.AccessToken))
+				{
+					_response.StatusCode = HttpStatusCode.BadRequest;
+					_response.IsSucceed = false;
+					_response.ErrorMessage.Add("Invalid Token");
+					return BadRequest(_response);
+				}
+				_response.StatusCode = HttpStatusCode.OK;
+				_response.IsSucceed = true;
+				_response.Result = tokenDtoResponse;
+				return Ok(_response);
+
+			}
+            else
+			{
+				_response.IsSucceed = false;
+				_response.ErrorMessage.Add("Invalid input");
+				return BadRequest(_response);
+
+			}  
+        }
+
+		[HttpPost("revoke")]
+		public async Task<IActionResult> RevokeRefreshToken([FromBody] TokenDto tokenDto)
+		{
+			
+			if (ModelState.IsValid)
+			{
+				await userrepo.RevokeRefreshToken(tokenDto);
+				_response.StatusCode = HttpStatusCode.OK;
+				_response.IsSucceed = true;
+				return Ok(_response);
+			}
+			_response.IsSucceed = false;
+			_response.ErrorMessage.Add("Invalid input");
+			return BadRequest(_response);
+		}
+	}
 }

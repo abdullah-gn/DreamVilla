@@ -73,10 +73,8 @@ namespace MagicVilla_Web.Controllers
 				}
 				else
 				{
-					if (Apiresponse.ErrorMessage.Count > 0)
-					{
-						ModelState.AddModelError("ErrorMessage", Apiresponse.ErrorMessage.FirstOrDefault());
-					}
+					TempData["Error"] = (Apiresponse.ErrorMessage != null && Apiresponse.ErrorMessage.Count > 0) ?
+						Apiresponse.ErrorMessage[0] : "Error Encountered";
 				}
 
 			}
@@ -131,7 +129,12 @@ namespace MagicVilla_Web.Controllers
 				});
 				return View(UpdateeVM);
 			}
-			
+			else
+			{
+				TempData["Error"] = (Apiresponse.ErrorMessage != null && Apiresponse.ErrorMessage.Count > 0) ?
+					Apiresponse.ErrorMessage[0] : "Error Encountered";
+			}
+
 			return NotFound();
 		}
 
@@ -151,11 +154,8 @@ namespace MagicVilla_Web.Controllers
 				}
 				else
 				{
-					if (Apiresponse.ErrorMessage.Count > 0)
-					{
-						ModelState.AddModelError("ErrorMessage", Apiresponse.ErrorMessage.FirstOrDefault());
-					}
-
+					TempData["Error"] = (Apiresponse.ErrorMessage != null && Apiresponse.ErrorMessage.Count > 0) ?
+						Apiresponse.ErrorMessage[0] : "Error Encountered";
 				}
 
 			}
@@ -191,6 +191,7 @@ namespace MagicVilla_Web.Controllers
 				return View(Villa);
 			}
 
+
 			return NotFound();
 
 		}
@@ -205,6 +206,11 @@ namespace MagicVilla_Web.Controllers
 			if (Apiresponse != null && Apiresponse.IsSucceed)
 			{
 				return RedirectToAction(nameof(VillaNumberIndex));
+			}
+			else
+			{
+				TempData["Error"] = (Apiresponse.ErrorMessage != null && Apiresponse.ErrorMessage.Count > 0) ?
+					Apiresponse.ErrorMessage[0] : "Error Encountered";
 			}
 
 

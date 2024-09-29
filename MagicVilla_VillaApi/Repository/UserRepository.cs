@@ -16,7 +16,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DreamVilla_VillaApi.Repository
 {
-	public class UserRepository : ILocalUserRepository
+	public class UserRepository : IUserRepository
 	{
 		private readonly ApplicationDbContext db;
         private readonly UserManager<ApplicationUser> userManager;
@@ -61,18 +61,69 @@ namespace DreamVilla_VillaApi.Repository
 					AccessToken = ""
 				};
 			}
-
-			var accessToken = await GetAccessToken(user);
+			var jwtTokenId = $"JTI{Guid.NewGuid()}";
+			var accessToken = await GetAccessToken(user,jwtTokenId);
+			var refreshToken = await CreateRefreshToken(user.Id, jwtTokenId);
 
 			TokenDto loginToken = new()
 			{
 				AccessToken = accessToken,
+				RefreshToken = refreshToken,
             };
 			return loginToken;			
 		}
 
+		public async Task<TokenDto> RefreshAccessToken(TokenDto tokenDto)
+		{
 
-		
+			// Find an existing refresh Token
+			var existingRefreshToken = await db.RefreshTokens.FirstOrDefaultAsync(u => u.Refresh_Token == tokenDto.RefreshToken);
+			if (existingRefreshToken == null)
+			{
+				return new TokenDto();
+			}
+			// Compare data from existing refresh and access token provided and if there is any mis-match then cosider it as fraud
+			var isTokenValid = GetAccessTokenData(tokenDto.AccessToken, existingRefreshToken.UserId, existingRefreshToken.JwtTokenId);
+			if (!isTokenValid)
+			{
+				await MarkTokenAsInvalid(existingRefreshToken);
+				return new TokenDto();
+
+			}
+			// When someone is access invalid token then return refuse it
+			if (!existingRefreshToken.IsValid)
+			{
+				await MarkAllTokensInChainAsInvalid(existingRefreshToken.UserId, existingRefreshToken.JwtTokenId);
+			}
+	
+			// If refresh token is expired then the user has to login in again
+			if (existingRefreshToken.ExpiresAt<DateTime.UtcNow)
+			{
+				await MarkTokenAsInvalid(existingRefreshToken);
+				return new TokenDto();
+			}
+
+			// If everthing is good then we replace the expired with new one and update the expire date
+			var newRefreshToken = await CreateRefreshToken(existingRefreshToken.UserId, existingRefreshToken.JwtTokenId);
+
+			// Revoke existing refresh token
+			 await MarkTokenAsInvalid(existingRefreshToken);
+
+			// generate new access token
+			var applicationUser = db.applicationUsers.FirstOrDefault(u=>u.Id == existingRefreshToken.UserId);
+			if (applicationUser == null)
+			{
+				return new TokenDto();
+			}
+			var newAccessToken = await GetAccessToken(applicationUser, existingRefreshToken.JwtTokenId);
+
+			return new TokenDto
+			{
+				AccessToken = newAccessToken,
+				RefreshToken = newRefreshToken
+			};
+		}
+
 		public async Task<AppUserDto> Register(RegisterDto registeruserDto)
 		{
 			ApplicationUser User = null;
@@ -118,8 +169,22 @@ namespace DreamVilla_VillaApi.Repository
 				
             }
 			return new AppUserDto();
-		}		
-		private async Task<string> GetAccessToken(ApplicationUser user)
+		}
+		public async Task RevokeRefreshToken(TokenDto tokenDto)
+		{
+			var existingRefreshToken = await db.RefreshTokens.FirstOrDefaultAsync(u => u.Refresh_Token == tokenDto.RefreshToken);
+			if (existingRefreshToken == null)
+				return;
+			// Compare data from existing refresh and access token provided and
+			// if there is any mis-match then we should do nothing with refresh token
+			var isTokenValid = GetAccessTokenData(tokenDto.AccessToken, existingRefreshToken.UserId, existingRefreshToken.JwtTokenId);
+			if (!isTokenValid)
+			{
+				return;
+			}
+			await MarkAllTokensInChainAsInvalid(existingRefreshToken.UserId, existingRefreshToken.JwtTokenId);
+		}
+		private async Task<string> GetAccessToken(ApplicationUser user, string jwtTokenId)
 		{
 			//Generate JWT token
 			//Token handler > JWTSecurity TokenHandler
@@ -139,15 +204,58 @@ namespace DreamVilla_VillaApi.Repository
 				Subject = new ClaimsIdentity(new Claim[]
 				{
 					new Claim(ClaimTypes.Name, user.UserName.ToString()),
-					new Claim(ClaimTypes.Role, Roles.FirstOrDefault())
+					new Claim(ClaimTypes.Role, Roles.FirstOrDefault()),
+					new Claim(JwtRegisteredClaimNames.Jti, jwtTokenId),
+					new Claim(JwtRegisteredClaimNames.Sub,user.Id)
 				}),
-				Expires = DateTime.UtcNow.AddDays(7),
+				Expires = DateTime.UtcNow.AddMinutes(60),
 				SigningCredentials = new(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
 			};
 
 			var token = tokenHandler.CreateToken(TokenDescriptor);
 			var tokenStr = tokenHandler.WriteToken(token);
 			return tokenStr;
+		}
+		private bool GetAccessTokenData(string AccessToken, string expectedUserId, string excpectedTokenId)
+		{
+			try
+			{
+				var tokenHanlder = new JwtSecurityTokenHandler();
+				var jwt = tokenHanlder.ReadJwtToken(AccessToken);
+				var jwtTokenId = jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Jti).Value;
+				var userId = jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub).Value;
+				return userId==expectedUserId && excpectedTokenId == jwtTokenId;
+			}
+			catch(Exception e)
+			{
+				return false;
+			}
+		}
+		private async Task<string> CreateRefreshToken(string userId, string jwtTokenId)
+		{
+			RefreshToken refreshToken = new RefreshToken
+			{
+				IsValid = true,
+				UserId = userId,
+				JwtTokenId = jwtTokenId,
+				ExpiresAt = DateTime.UtcNow.AddDays(30),
+				Refresh_Token = $"{Guid.NewGuid()}" + "-" + Guid.NewGuid()
+			};
+			await db.RefreshTokens.AddAsync(refreshToken);
+			await db.SaveChangesAsync();
+			return refreshToken.Refresh_Token;
+
+		}
+		private async Task MarkAllTokensInChainAsInvalid(string userId, string tokenId)
+		{
+			await db.RefreshTokens.Where(u => u.UserId == userId
+					&& u.JwtTokenId == tokenId)
+					.ExecuteUpdateAsync(u => u.SetProperty(refresh => refresh.IsValid, false));
+		}
+		private Task MarkTokenAsInvalid(RefreshToken refreshToken)
+		{
+			refreshToken.IsValid = false;
+			return db.SaveChangesAsync();
 		}
 
 	}

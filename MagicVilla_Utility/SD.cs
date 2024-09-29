@@ -8,7 +8,8 @@
 		
 		}
 
-		public static string AccessToken = "JWTTOKEN";
+		public static string AccessToken = "JWTToken";
+		public static string RefreshToken = "RefreshToken";
 		public static string ApiVersion = "V2";
 		public const string Admin  = "Admin";
         public const string Customer = "Customer";

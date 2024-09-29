@@ -22,6 +22,7 @@ namespace DreamVilla_VillaApi.Data
 		public DbSet<Villa> Villas { get; set; }
 		public DbSet<VillaNumber> VillaNumbers { get; set; }
 		public DbSet<LocalUser> LocalUsers { get; set; }
+		public DbSet<RefreshToken> RefreshTokens { get; set; }
 
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
