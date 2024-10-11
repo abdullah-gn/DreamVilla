@@ -18,7 +18,20 @@ namespace DreamVilla_VillaApi.Controllers
         private readonly IUserRepository userrepo;
         private APIResponse _response;
 
-        public UserController(IUserRepository _Userrepo)
+
+        //Handle excpetion handling using controller (end point) exception handler Middleware
+        [HttpGet("Error")]
+        public async Task<IActionResult> Error()
+        {
+            throw new FileNotFoundException();
+        }
+		//Handle excpetion handling using filters
+		[HttpGet("ImageError")]
+		public async Task<IActionResult> ImageError()
+		{
+			throw new BadImageFormatException("Fake Image Exception");
+		}
+		public UserController(IUserRepository _Userrepo)
         {
             userrepo = _Userrepo;
             _response = new();

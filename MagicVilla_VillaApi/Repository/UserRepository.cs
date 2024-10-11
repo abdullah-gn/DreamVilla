@@ -209,6 +209,9 @@ namespace DreamVilla_VillaApi.Repository
 					new Claim(JwtRegisteredClaimNames.Sub,user.Id)
 				}),
 				Expires = DateTime.UtcNow.AddMinutes(60),
+				//Good for Micro-services Arch
+				Issuer = "https://magicvilla-api.com",
+				Audience ="https://test-magicvilla-api.com",
 				SigningCredentials = new(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
 			};
 
