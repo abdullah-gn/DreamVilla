@@ -22,6 +22,7 @@ using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using DreamVilla_VillaApi.Extensions;
 using DreamVilla_VillaApi.Middlewares;
+using Microsoft.AspNetCore.Server.HttpSys;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -109,16 +110,26 @@ builder.Services.AddControllers(options =>
   });
 
 //builder.Services.AddSingleton<ILogging, Logging>();
-var app = builder.Build();
 
+
+var app = builder.Build();
+app.UseSwagger();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-	app.UseSwagger();
 	app.UseSwaggerUI(options =>
 	{
 		options.SwaggerEndpoint("/swagger/v2/swagger.json", "Magic Villa V2");
 		options.SwaggerEndpoint("/swagger/v1/swagger.json", "Magic Villa V1");
+	});
+}
+else
+{
+	app.UseSwaggerUI(options =>
+	{
+		options.SwaggerEndpoint("/swagger/v2/swagger.json", "Magic Villa V2");
+		options.SwaggerEndpoint("/swagger/v1/swagger.json", "Magic Villa V1");
+		options.RoutePrefix = "";
 	});
 }
 
